@@ -39,10 +39,9 @@ document.querySelector('.btn-add-data-4').addEventListener('click', function () 
     el.style.display = 'none'
     el.innerHTML = ''
     el.style.display = 'block'
-    new Promise((r) => {
-        r()
-    }).then(() => {
+    Promise.resolve().then(() => {
         // 微任务在dom渲染前触发，虽然第41行的代码已经设置了el.style.display = 'block'，但是执行到这里（第46行）时，el还是隐藏状态
+        // 这里的el还是隐藏的，因为先执行微任务、再执行dom渲染
         el.innerHTML = getHtml()
     })
     // 可以看到最后的结果是，滚动条保留之前的状态
@@ -56,6 +55,7 @@ document.querySelector('.btn-add-data-5').addEventListener('click', function () 
     el.innerHTML = ''
     el.style.display = 'block'
     setTimeout(() => {
+        // 这里的el已经显示出来了，因为宏任务在dom渲染之后
         el.innerHTML = getHtml()
     }, 0)
     // 滚动条重置了（但是内容会闪烁一下）
@@ -64,6 +64,17 @@ document.querySelector('.btn-add-data-5').addEventListener('click', function () 
 // 对比按钮3、4、5，从隐藏状态切换到显示状态后，要在一个宏任务后，重新渲染子元素，才可以让scrollTop不保留上次的值
 // 因为微任务是在DOM渲染前触发，宏任务是在DOM渲染后触发
 
+
+
+document.querySelector('.my-btn').addEventListener('click', function (){
+    for(let i=0; i<1000; i++){
+        document.querySelector('.test-text').innerHTML = document.querySelector('.test-text').innerHTML + `<li>第${i}行</li>`
+    }
+    Promise.resolve().then(()=>{
+        console.log('70行 promise.then，微任务已执行')
+        alert('看看dom更新了没')
+    })
+})
 
 function getHtml() {
     var html = Array(10).fill(0).map(item => {
