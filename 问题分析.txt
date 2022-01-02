@@ -1,0 +1,40 @@
+this.options = ['']
+this.options = ['1']
+this.options = ['2']
+this.options = ['3']
+this.options = ['4']  //异步更新，只有最后一次的赋值会更新dom
+
+            this.$nextTick(()=>{
+              this.options = this.list.filter(item => {
+                return item.label.toLowerCase()
+                  .indexOf(query.toLowerCase()) > -1;
+              });    
+            })
+
+
+问题（知识点）：
+1，$nextTick的作用 为什么要用nexttick   // 引申=> 1，nexttick和settimeout有什么区别  2，宏任务微任务 
+异步更新
+
+nextTick：源码里判断了浏览器对相关api的支持情况，优先使用微任务（promise.then、MutationObserver），不支持微任务的话才用宏任务（setImmediate、setTimeout）。
+宏任务微任务执行顺序：几句话讲不清，网上有很多资料
+
+2，更新数据后，为什么滚动条会保留之前的位置
+更新子元素，外层容器的scrollTop不变。
+（除非新的子元素高度比较小，滚不到之前那么远，scrollTop会自动变小。清空子元素，scrollTop会变成0。）
+
+3，为什么用this.option=['']重置就可以了，而用this.option=[]却不行
+el-select组件的菜单列表和空数据提示面板是两个并列的兄弟元素，根据有无数据切换显示隐藏（v-show display:block/none）
+在display:block的状态下，清空子元素，或者让子元素的内容高度小于父元素（this.options=['']），滚动条消失，scrollTop会重置为0。
+所以用this.option=['']重置，可以修复bug。
+在display:none的状态下，先清空子元素(this.options=[])，再重新赋值（this.options=选项列表），然后切回display:block，scrollTop会回到之前的值，
+所以用this.options=[]不行。因为element-ui的源码里，option.length是0时，列表是隐藏状态。
+
+解决办法：
+1，this.options = ['']
+2, 手动获取到.el-select-dropdown__wrap元素，改它的scrollTop
+this.options = 选项列表
+this.$nextTick(()=>{
+    document.querySelector('.el-select-dropdown__wrap').scrollTop = 0
+})
+3,改源码，把v-show改成v-if（但是源码复杂，可能牵一发动全身 引起其他bug，而且不方便维护）
